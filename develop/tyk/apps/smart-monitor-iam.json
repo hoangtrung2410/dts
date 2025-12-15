@@ -1,0 +1,40 @@
+{
+  "name": "smart-monitor-iam",
+  "api_id": "smart-monitor-iam",
+  "org_id": "default",
+  "use_keyless": true,
+  "auth": {
+    "auth_header_name": ""
+  },
+  "definition": {
+    "key": "version",
+    "location": "header"
+  },
+  "proxy": {
+    "listen_path": "/smart-monitor-iam/",
+    "target_url": "http://host.docker.internal:3456",
+    "strip_listen_path": true
+  },
+  "version_data": {
+    "not_versioned": true,
+    "default_version": "Default",
+    "versions": {
+      "Default": {
+        "name": "Default",
+        "use_extended_paths": true
+      }
+    }
+  },
+  "global_rate_limit": {
+    "rate": 100000,
+    "per": 86400
+  },
+
+  "global_quota": {
+    "enabled": true,
+    "quota_max": 100000,
+    "quota_renewal_rate_ms": 86400000,
+    "quota_remaining": 100000
+  },
+  "active": true
+}

@@ -1,0 +1,75 @@
+version: '3.9'
+
+services:
+  # --- Tyk Gateway ---
+  tyk-gateway-smart-monitor:
+    image: tykio/tyk-gateway:v5.8
+    container_name: tyk-gateway-smart-monitor
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./apps:/opt/tyk-gateway/apps
+      - ./tyk.conf:/opt/tyk-gateway/tyk.conf
+      - ./middleware:/opt/tyk-gateway/middleware
+      - ./certs:/opt/tyk-gateway/certs
+    networks:
+      - tyk-smart-monitor
+    depends_on:
+      - tyk-redis-smart-monitor
+
+  # --- Redis ---
+  tyk-redis-smart-monitor:
+    image: redis:7.4-alpine
+    container_name: tyk-redis-smart-monitor
+    restart: unless-stopped
+    networks:
+      - tyk-smart-monitor
+
+  # --- Tyk Pump ---
+  tyk-pump:
+    image: tykio/tyk-pump-docker-pub:v1.7.0-rc1
+    container_name: tyk-pump
+    ports:
+      - "8083:8083"
+      - "8084:8084"
+    networks:
+      - tyk-smart-monitor
+    volumes:
+      - ./pump.conf:/opt/tyk-pump/pump.conf
+    depends_on:
+      - tyk-redis-smart-monitor
+
+  # --- Prometheus ---
+  prometheus-smart-monitor:
+    image: prom/prometheus:latest
+    container_name: prometheus-smart-monitor
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - tyk-smart-monitor
+    depends_on:
+      - tyk-gateway-smart-monitor
+      - tyk-pump
+
+  # --- Grafana ---
+  grafana-smart-monitor:
+    image: grafana/grafana:latest
+    container_name: grafana-smart-monitor
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - tyk-smart-monitor
+    depends_on:
+      - prometheus-smart-monitor
+
+networks:
+  tyk-smart-monitor:
+    driver: bridge
